@@ -1,0 +1,23 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+}
+svg {
+  background-color: aliceblue;
+  width: 100%;
+}
+#container {
+  display: flex;
+  gap: 3rem;
+  height: 100%;
+}
+#controls {
+  width: 15%;
+  background: cyan;
+}
+#map {
+  flex: 1;
+  background: bisque;
+}

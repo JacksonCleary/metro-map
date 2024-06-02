@@ -1,6 +1,8 @@
-import createNode from './sdk/Example'
-import './styles/entry.sass'
+import initialize from "./sdk/App";
+import "./styles/entry.scss";
 
 (() => {
-  createNode()
-})()
+  document.addEventListener("DOMContentLoaded", function () {
+    initialize();
+  });
+})();
