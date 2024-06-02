@@ -1,6 +1,11 @@
 import { SVGUtil } from "../util/SvgUtil";
 import { Point } from "../models/Point";
 import { Path } from "../models/Path";
+import { PathSegmentModel } from "../models/PathSegment";
+
+function getRandomNumber(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 export interface PointCollectionModel {
   svgUtil: SVGUtil;
@@ -64,12 +69,63 @@ export class PointCollection {
         (centerX - x) ** 2 + (centerY - y) ** 2
       );
       const pathLength = distanceToCenter * 0.95; // Proportional to the distance from the point to the center
-
+      // console.log("distanceToCenter", distanceToCenter);
       const sideAngle = Math.atan2(centerY - y, centerX - x);
       const pathEndX = centerX + Math.cos(sideAngle) * pathLength;
       const pathEndY = centerY + Math.sin(sideAngle) * pathLength;
 
-      const pathData = `M${x},${y} L${pathEndX},${pathEndY}`;
+      // // testing generation
+      // const minStartingSegment = -0.55;
+      // const maxStartingSegment = -0.85;
+      // const randomStartingSegmentLength =
+      //   Math.random() * (maxStartingSegment - minStartingSegment) +
+      //   minStartingSegment;
+      // const pathStartX =
+      //   centerX +
+      //   Math.cos(sideAngle) * pathLength * randomStartingSegmentLength;
+      // const pathStartY =
+      //   centerY +
+      //   Math.sin(sideAngle) * pathLength * randomStartingSegmentLength;
+
+      // //
+      // const angle = Math.atan2(centerY - y, centerX - x);
+      // const degrees = 45;
+      // const minNextOneSegment = -0.5;
+      // const maxNextOneSegment = -0.5;
+      // const randomNextOneSegmentLength =
+      //   Math.random() * (maxNextOneSegment - minNextOneSegment) +
+      //   minNextOneSegment;
+      // const angleInRadians =
+      //   (angle + (Math.PI / 180) * degrees) % (2 * Math.PI);
+      // const rotatedX =
+      //   centerX +
+      //   Math.cos(angleInRadians) * pathLength * randomNextOneSegmentLength;
+      // const rotatedY =
+      //   centerY +
+      //   Math.sin(angleInRadians) * pathLength * randomNextOneSegmentLength;
+
+      let pathData = `M${x},${y}`;
+      let currentPathSegment: PathSegmentModel;
+      const firstPathSegment = this.svgUtil.generatePathSegment({
+        x,
+        y,
+      });
+      pathData += firstPathSegment.path;
+
+      currentPathSegment = firstPathSegment;
+
+      for (let i = 0; i < 4; i++) {
+        const pathSegment = this.svgUtil.generatePathSegment({
+          x: currentPathSegment.x,
+          y: currentPathSegment.y,
+          lengthModifier: 1,
+          degrees: currentPathSegment.degrees
+            ? currentPathSegment.degrees + getRandomNumber(35, 45)
+            : 0,
+        });
+        pathData += pathSegment.path;
+        currentPathSegment = pathSegment;
+      }
 
       const path = new Path({ startX: x, startY: y });
       path.setEndXEndY({ endX: pathEndX, endY: pathEndY });
