@@ -16,13 +16,23 @@ const initializePointCollection = ({
 
   const paths = pointCollection.generatePaths();
 
+  pointCollection.trimPaths();
+
   for (const path of paths) {
-    const circleElement = svgUtil.createCircle(path.startX, path.startY);
+    const circleElements = svgUtil.createCircle(path.startX, path.startY);
 
     if (path.pathData && svgUtil.svgEl) {
-      const pathElement = svgUtil.createPath(path.pathData);
-      svgUtil.insertEl(pathElement, svgUtil.svgEl);
-      svgUtil.insertEl(circleElement, svgUtil.svgEl);
+      const backgroundPathElements = svgUtil.createPath(
+        path.pathData,
+        "white",
+        10
+      );
+      const pathElements = svgUtil.createPath(path.pathData);
+      // insert background paths
+      svgUtil.insertEl(backgroundPathElements, svgUtil.svgEl);
+      // insert paths to calculate on
+      svgUtil.insertEl(pathElements, svgUtil.svgEl);
+      svgUtil.insertEl(circleElements, svgUtil.svgEl);
     }
   }
 };

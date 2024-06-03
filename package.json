@@ -54,5 +54,8 @@
     "build:js": "npx webpack --env.NODE_ENV=production --progress --colors --config ./bundler/webpack.common.js",
     "build": "npm run build:js",
     "start:dev": "npx webpack-dev-server --env.NODE_ENV=development --progress --colors --config ./bundler/webpack.common.js"
+  },
+  "dependencies": {
+    "path-intersection": "^3.1.0"
   }
 }

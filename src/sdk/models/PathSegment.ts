@@ -1,6 +1,8 @@
 export type PathSegmentModel = {
-  x: number;
-  y: number;
+  startingX: number;
+  startingY: number;
+  endingX: number;
+  endingY: number;
   lengthModifier?: number;
   degrees?: number;
   path?: string;

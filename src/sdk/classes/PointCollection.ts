@@ -2,8 +2,9 @@ import { SVGUtil } from "../util/SvgUtil";
 import { Point } from "../models/Point";
 import { Path } from "../models/Path";
 import { PathSegmentModel } from "../models/PathSegment";
+import intersect from "path-intersection";
 
-function getRandomNumber(min: number, max: number) {
+function pickBetween(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
@@ -68,60 +69,62 @@ export class PointCollection {
       const distanceToCenter = Math.sqrt(
         (centerX - x) ** 2 + (centerY - y) ** 2
       );
-      const pathLength = distanceToCenter * 0.95; // Proportional to the distance from the point to the center
-      // console.log("distanceToCenter", distanceToCenter);
+      const pathLength = distanceToCenter * 0.95;
       const sideAngle = Math.atan2(centerY - y, centerX - x);
       const pathEndX = centerX + Math.cos(sideAngle) * pathLength;
       const pathEndY = centerY + Math.sin(sideAngle) * pathLength;
 
-      // // testing generation
-      // const minStartingSegment = -0.55;
-      // const maxStartingSegment = -0.85;
-      // const randomStartingSegmentLength =
-      //   Math.random() * (maxStartingSegment - minStartingSegment) +
-      //   minStartingSegment;
-      // const pathStartX =
-      //   centerX +
-      //   Math.cos(sideAngle) * pathLength * randomStartingSegmentLength;
-      // const pathStartY =
-      //   centerY +
-      //   Math.sin(sideAngle) * pathLength * randomStartingSegmentLength;
-
-      // //
-      // const angle = Math.atan2(centerY - y, centerX - x);
-      // const degrees = 45;
-      // const minNextOneSegment = -0.5;
-      // const maxNextOneSegment = -0.5;
-      // const randomNextOneSegmentLength =
-      //   Math.random() * (maxNextOneSegment - minNextOneSegment) +
-      //   minNextOneSegment;
-      // const angleInRadians =
-      //   (angle + (Math.PI / 180) * degrees) % (2 * Math.PI);
-      // const rotatedX =
-      //   centerX +
-      //   Math.cos(angleInRadians) * pathLength * randomNextOneSegmentLength;
-      // const rotatedY =
-      //   centerY +
-      //   Math.sin(angleInRadians) * pathLength * randomNextOneSegmentLength;
-
       let pathData = `M${x},${y}`;
       let currentPathSegment: PathSegmentModel;
       const firstPathSegment = this.svgUtil.generatePathSegment({
-        x,
-        y,
+        startingX: centerX,
+        startingY: centerY,
+        endingX: x,
+        endingY: y,
+        lengthModifier: 1,
+        degrees: 1,
       });
       pathData += firstPathSegment.path;
 
       currentPathSegment = firstPathSegment;
 
-      for (let i = 0; i < 4; i++) {
+      const testArr = [
+        {
+          angle: pickBetween(-45, 45),
+          lengthModifier: pickBetween(0.25, 0.05),
+        },
+        {
+          angle: 360,
+          lengthModifier: pickBetween(0.65, 0.95),
+        },
+        {
+          angle: pickBetween(pickBetween(-135, 135), pickBetween(-45, 45)),
+          lengthModifier: pickBetween(0.75, 0.95),
+        },
+        {
+          angle: 360,
+          lengthModifier: pickBetween(0.25, 0.75),
+        },
+        {
+          angle: pickBetween(pickBetween(-90, 90), pickBetween(-45, 45)),
+          lengthModifier: pickBetween(0.25, 0.75),
+        },
+      ];
+      for (let i = 0; i < testArr.length; i++) {
+        const currentTest = testArr[i];
+
+        const startingX = currentPathSegment.endingX;
+        const startingY = currentPathSegment.endingY;
+        const endingX = startingX + Math.cos(sideAngle) * pathLength;
+        const endingY = startingY + Math.sin(sideAngle) * pathLength;
         const pathSegment = this.svgUtil.generatePathSegment({
-          x: currentPathSegment.x,
-          y: currentPathSegment.y,
-          lengthModifier: 1,
-          degrees: currentPathSegment.degrees
-            ? currentPathSegment.degrees + getRandomNumber(35, 45)
-            : 0,
+          startingX,
+          startingY,
+          endingX,
+          endingY,
+
+          lengthModifier: currentTest.lengthModifier,
+          degrees: currentTest.angle,
         });
         pathData += pathSegment.path;
         currentPathSegment = pathSegment;
@@ -132,6 +135,72 @@ export class PointCollection {
       path.setPathData(pathData);
 
       this.paths.push(path);
+    }
+
+    return this.paths;
+  }
+
+  trimPaths() {
+    for (const path of this.paths) {
+      const pathData = path.getPathData();
+      if (pathData && this.svgUtil.svgEl) {
+        const segments = pathData.split("L");
+        const secondToLastSegment = segments[segments.length - 2];
+        const lastSegment = segments[segments.length - 1];
+        const coordinates = secondToLastSegment.split(",");
+        const x = coordinates[0].trim().replace("M", "");
+        const y = coordinates[1].trim();
+        const modifiedSegmentForElementCalc = `M${x},${y} L${secondToLastSegment} L${lastSegment}`;
+
+        let foundIntersection = [];
+
+        const otherPaths = this.paths.filter(
+          (p) => p.pathData !== path.pathData
+        );
+
+        for (const otherPath of otherPaths) {
+          // loop through other paths to check for intersectin of last segment
+          const otherPathData = otherPath.getPathData();
+          if (otherPathData) {
+            /////////
+            foundIntersection.push(
+              intersect(
+                modifiedSegmentForElementCalc,
+                // pathData,
+                otherPathData
+              )
+            );
+          }
+        }
+        console.log("foundIntersection", foundIntersection);
+        if (foundIntersection && foundIntersection.length) {
+          const pathsWithoutLastSegment = segments.slice(0, -1).join("L");
+
+          for (const intersection of foundIntersection) {
+            if (intersection[0]) {
+              const point = intersection[0];
+              const circle = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "circle"
+              );
+              circle.setAttribute("cx", point.x.toString());
+              circle.setAttribute("cy", point.y.toString());
+              circle.setAttribute("r", "5");
+              circle.setAttribute("fill", "red");
+              this.svgUtil.insertEl(circle, this.svgUtil.svgEl);
+
+              //////
+
+              const newSegment = `L${point.x},${point.y}`;
+              path.setPathData(`${pathsWithoutLastSegment} ${newSegment}`);
+              path.setEndXEndY({
+                endX: point.x,
+                endY: point.y,
+              });
+            }
+          }
+        }
+      }
     }
 
     return this.paths;

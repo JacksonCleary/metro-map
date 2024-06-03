@@ -23,4 +23,24 @@ export class Path {
   setPathData(pathData: string) {
     this.pathData = pathData;
   }
+
+  getPathData() {
+    return this.pathData;
+  }
+
+  getPathStartX() {
+    return this.startX;
+  }
+
+  getPathStartY() {
+    return this.startY;
+  }
+
+  getPathEndX() {
+    return this.endX;
+  }
+
+  getPathEndY() {
+    return this.endY;
+  }
 }
