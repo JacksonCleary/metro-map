@@ -1,4 +1,5 @@
 import { PathSegmentModel } from "../models/PathSegment";
+import { MathUtil } from "./MathUtil";
 
 export type SVGElementTypes =
   | HTMLElement
@@ -19,6 +20,7 @@ export class SVGUtil {
   centerY: number;
   numberOfPoints: number;
   radius: number;
+  possibleAngles: number[];
 
   constructor({ parentEl }: SVGUtilModel) {
     this.parentEl = parentEl;
@@ -28,6 +30,7 @@ export class SVGUtil {
     this.centerX = Math.floor(this.width / 2);
     this.centerY = Math.floor(this.height / 2);
     this.radius = 5;
+    this.possibleAngles = [180, 135, 90, -90, -135, -180];
   }
 
   createSvg(): SVGElement {
@@ -76,20 +79,19 @@ export class SVGUtil {
     startingY,
     endingX,
     endingY,
-    lengthModifier = -0.95,
     degrees = 45,
-  }: PathSegmentModel): PathSegmentModel {
-    const distanceToCenter = Math.sqrt(
-      (startingX - endingX) ** 2 + (startingY - endingY) ** 2
-    );
-    const pathLength = distanceToCenter * lengthModifier; // Proportional to the distance from the point to the center
-
+    start = false,
+  }: PathSegmentModel & { start?: boolean }): PathSegmentModel {
+    const pathLength = 50; // Proportional to the distance from the point to the center
     const angle = Math.atan2(startingY - endingY, startingX - endingX);
-    const minSegment = -0.55;
-    const maxSegment = -0.85;
-    const randomSegmentLength =
-      Math.random() * (maxSegment - minSegment) + minSegment;
-    const angleInRadians = (angle + (Math.PI / 180) * degrees) % (2 * Math.PI);
+
+    const minSegment = start ? 1 : 0.25;
+    const maxSegment = start ? 2 : 1.5;
+    const randomSegmentLength = MathUtil.getRandomNumber(
+      minSegment,
+      maxSegment
+    );
+    const angleInRadians = MathUtil.getAngleInRadians(angle, degrees);
     const rotatedX =
       startingX + Math.cos(angleInRadians) * pathLength * randomSegmentLength;
     const rotatedY =
@@ -102,7 +104,6 @@ export class SVGUtil {
       startingY: endingY,
       endingX: rotatedX,
       endingY: rotatedY,
-      lengthModifier,
       degrees,
       path: pathData,
     };

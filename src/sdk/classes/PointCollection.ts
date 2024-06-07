@@ -1,12 +1,9 @@
 import { SVGUtil } from "../util/SvgUtil";
+import { MathUtil } from "../util/MathUtil";
 import { Point } from "../models/Point";
 import { Path } from "../models/Path";
 import { PathSegmentModel } from "../models/PathSegment";
 import intersect from "path-intersection";
-
-function pickBetween(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
 
 export interface PointCollectionModel {
   svgUtil: SVGUtil;
@@ -73,16 +70,25 @@ export class PointCollection {
       const sideAngle = Math.atan2(centerY - y, centerX - x);
       const pathEndX = centerX + Math.cos(sideAngle) * pathLength;
       const pathEndY = centerY + Math.sin(sideAngle) * pathLength;
+      const degrees = 180;
+      const angle = Math.atan2(y - centerY, x - centerX);
+      const randomSegmentLength = 10;
+      const angleInRadians = MathUtil.getAngleInRadians(angle, degrees);
+      const rotatedX =
+        x + Math.cos(angleInRadians) * pathLength * randomSegmentLength;
+      const rotatedY =
+        y + Math.sin(angleInRadians) * pathLength * randomSegmentLength;
 
       let pathData = `M${x},${y}`;
       let currentPathSegment: PathSegmentModel;
       const firstPathSegment = this.svgUtil.generatePathSegment({
-        startingX: centerX,
-        startingY: centerY,
-        endingX: x,
-        endingY: y,
-        lengthModifier: 1,
-        degrees: 1,
+        startingX: x,
+        startingY: y,
+        endingX: rotatedX,
+        endingY: rotatedY,
+        // degrees: degrees,
+        start: true,
+        degrees: MathUtil.pickBetween(...this.svgUtil.possibleAngles),
       });
       pathData += firstPathSegment.path;
 
@@ -90,27 +96,23 @@ export class PointCollection {
 
       const testArr = [
         {
-          angle: pickBetween(-45, 45),
-          lengthModifier: pickBetween(0.25, 0.05),
+          // angle: MathUtil.pickBetween(-45, 45),
+          angle: MathUtil.pickBetween(...this.svgUtil.possibleAngles),
         },
-        {
-          angle: 360,
-          lengthModifier: pickBetween(0.65, 0.95),
-        },
-        {
-          angle: pickBetween(pickBetween(-135, 135), pickBetween(-45, 45)),
-          lengthModifier: pickBetween(0.75, 0.95),
-        },
-        {
-          angle: 360,
-          lengthModifier: pickBetween(0.25, 0.75),
-        },
-        {
-          angle: pickBetween(pickBetween(-90, 90), pickBetween(-45, 45)),
-          lengthModifier: pickBetween(0.25, 0.75),
-        },
+        // {
+        //   angle: MathUtil.pickBetween(...this.svgUtil.possibleAngles),
+        // },
+        // {
+        //   angle: MathUtil.pickBetween(...this.svgUtil.possibleAngles),
+        // },
+        // {
+        //   angle: MathUtil.pickBetween(...this.svgUtil.possibleAngles),
+        // },
+        // {
+        //   angle: MathUtil.pickBetween(...this.svgUtil.possibleAngles),
+        // },
       ];
-      for (let i = 0; i < testArr.length; i++) {
+      for (let i = 0; i < 6; i++) {
         const currentTest = testArr[i];
 
         const startingX = currentPathSegment.endingX;
@@ -122,16 +124,18 @@ export class PointCollection {
           startingY,
           endingX,
           endingY,
-
-          lengthModifier: currentTest.lengthModifier,
-          degrees: currentTest.angle,
+          // degrees: currentTest.angle,
+          degrees: MathUtil.pickBetween(...this.svgUtil.possibleAngles),
         });
         pathData += pathSegment.path;
         currentPathSegment = pathSegment;
       }
 
       const path = new Path({ startX: x, startY: y });
-      path.setEndXEndY({ endX: pathEndX, endY: pathEndY });
+      path.setEndXEndY({
+        endX: currentPathSegment.endingX,
+        endY: currentPathSegment.endingY,
+      });
       path.setPathData(pathData);
 
       this.paths.push(path);
@@ -140,6 +144,7 @@ export class PointCollection {
     return this.paths;
   }
 
+  // connecting the last segment of a path with an intersecting path (for stations)
   trimPaths() {
     for (const path of this.paths) {
       const pathData = path.getPathData();
@@ -185,7 +190,7 @@ export class PointCollection {
               );
               circle.setAttribute("cx", point.x.toString());
               circle.setAttribute("cy", point.y.toString());
-              circle.setAttribute("r", "5");
+              circle.setAttribute("r", "10");
               circle.setAttribute("fill", "red");
               this.svgUtil.insertEl(circle, this.svgUtil.svgEl);
 
