@@ -1,5 +1,7 @@
 import { PathSegmentModel } from "../models/PathSegment";
+import { PointModel } from "../models/Point";
 import { MathUtil } from "./MathUtil";
+import { Path } from "../models/Path";
 
 export type SVGElementTypes =
   | HTMLElement
@@ -41,14 +43,20 @@ export class SVGUtil {
     return svg;
   }
 
-  createCircle(x: number, y: number) {
+  createCircle(
+    x: number,
+    y: number,
+    fill: string = "black",
+    radius = this.radius
+  ) {
     const circle = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "circle"
     );
     circle.setAttribute("cx", x.toString());
     circle.setAttribute("cy", y.toString());
-    circle.setAttribute("r", this.radius.toString());
+    circle.setAttribute("fill", fill);
+    circle.setAttribute("r", radius.toString());
     return circle;
   }
 
@@ -109,5 +117,47 @@ export class SVGUtil {
     };
 
     return pathSegment;
+  }
+
+  createPointsAlongPath(
+    path: SVGPathElement,
+    existingPoints: PointModel[],
+    pathEnd: PointModel,
+    radius: number
+  ): PointModel[] {
+    const totalLength = path.getTotalLength();
+    const points: PointModel[] = [];
+    const existingPointsAndEndPoints = [...existingPoints, pathEnd];
+
+    const min = 1;
+    const max = 3;
+
+    // create station points
+    for (
+      let i = 0;
+      i < totalLength;
+      i += totalLength / Math.floor(Math.random() * (max - min + 1) + min)
+    ) {
+      const { x, y } = path.getPointAtLength(i);
+
+      // Check if the point overlaps with any of the existing points
+      const overlaps = existingPointsAndEndPoints.some(
+        (point) =>
+          Math.sqrt((x - point.x) ** 2 + (y - point.y) ** 2) < radius * 2
+      );
+
+      if (!overlaps) {
+        points.push({ x, y });
+      }
+    }
+
+    // remove duplicates
+    const uniquePoints = points.filter((point, index) => {
+      const isDuplicate =
+        points.findIndex((p) => p.x === point.x && p.y === point.y) === index;
+      return isDuplicate;
+    });
+
+    return uniquePoints;
   }
 }

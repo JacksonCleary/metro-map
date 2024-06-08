@@ -6,6 +6,13 @@ export class MathUtil {
     return floor ? Math.floor(rand) : rand;
   }
 
+  static getRandomDecimal(min: number, max: number) {
+    min = Math.min(min, max);
+    max = Math.max(min, max);
+    const rand = min + Math.random() * (max - min);
+    return rand;
+  }
+
   static pickBetween(...args: number[]): number {
     const randomIndex = Math.floor(Math.random() * args.length);
     return args[randomIndex];
