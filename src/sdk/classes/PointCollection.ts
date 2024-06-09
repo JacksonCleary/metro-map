@@ -82,14 +82,14 @@ export class PointCollection {
         (num) => num !== 90 && num !== -90
       );
 
-      const firstDegree = MathUtil.pickBetween(...angles);
+      const firstDegrees = MathUtil.pickBetween(...angles);
       const angle = Math.atan2(y - centerY, x - centerX);
-      const randomSegmentLength = 10;
-      const angleInRadians = MathUtil.getAngleInRadians(angle, firstDegree);
+      const segmentLength = 10;
+      const angleInRadians = MathUtil.getAngleInRadians(angle, firstDegrees);
       const rotatedX =
-        x + Math.cos(angleInRadians) * pathLength * randomSegmentLength;
+        x + Math.cos(angleInRadians) * pathLength * segmentLength;
       const rotatedY =
-        y + Math.sin(angleInRadians) * pathLength * randomSegmentLength;
+        y + Math.sin(angleInRadians) * pathLength * segmentLength;
 
       let pathData = `M${x},${y}`;
       let currentPathSegment: PathSegmentModel;
@@ -98,36 +98,31 @@ export class PointCollection {
         startingY: y,
         endingX: rotatedX,
         endingY: rotatedY,
-        degrees: firstDegree,
+        degrees: firstDegrees,
         start: true,
       });
       pathData += firstPathSegment.path;
 
       currentPathSegment = firstPathSegment;
 
-      let previousDegrees = firstDegree;
-      for (let i = 0; i < 8; i++) {
+      const segmentsToGenerate = 8;
+      for (let i = 0; i < segmentsToGenerate; i++) {
         const startingX = currentPathSegment.endingX;
         const startingY = currentPathSegment.endingY;
         const endingX = startingX + Math.cos(sideAngle) * pathLength;
         const endingY = startingY + Math.sin(sideAngle) * pathLength;
 
-        const degrees = MathUtil.pickBetween(
-          ...this.svgUtil.possibleAngles.filter(
-            (num) => num !== -previousDegrees || num !== previousDegrees
-          )
-        );
+        const degrees = MathUtil.pickBetween(...this.svgUtil.possibleAngles);
 
         const pathSegment = this.svgUtil.generatePathSegment({
           startingX,
           startingY,
           endingX,
           endingY,
-          degrees: MathUtil.pickBetween(...this.svgUtil.possibleAngles),
+          degrees,
         });
         pathData += pathSegment.path;
         currentPathSegment = pathSegment;
-        previousDegrees = degrees;
       }
 
       const path = new Path({ startX: x, startY: y });

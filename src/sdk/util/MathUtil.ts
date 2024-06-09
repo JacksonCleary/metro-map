@@ -35,6 +35,11 @@ export class MathUtil {
     return (angle + (Math.PI / 180) * degrees) % (2 * Math.PI);
   }
 
+  static convertRadiansToDegrees(radians: number): number {
+    const degrees = radians * (180 / Math.PI);
+    return degrees;
+  }
+
   static calculateCircleLength(
     radius: number,
     centerX: number,

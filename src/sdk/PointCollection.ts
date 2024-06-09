@@ -14,6 +14,10 @@ const initializePointCollection = ({
   });
 
   // set up svg stuff
+  const backgroundPathColor = "white";
+  const backgroundPathStrokeWidth = 15;
+  const trainPathColor = "black";
+  const trainPathStrokeWidth = 12;
   const intersectionPointColor = "red";
   const stationPointColor = "cyan";
   const intersectionPointRadius = 7;
@@ -38,10 +42,14 @@ const initializePointCollection = ({
       const startingPoints = svgUtil.createCircle(path.startX, path.startY);
       const backgroundPathElements = svgUtil.createPath(
         path.pathData,
-        "white",
-        10
+        backgroundPathColor,
+        backgroundPathStrokeWidth
       );
-      const pathElements = svgUtil.createPath(path.pathData);
+      const pathElements = svgUtil.createPath(
+        path.pathData,
+        trainPathColor,
+        trainPathStrokeWidth
+      );
       // insert background paths
       svgUtil.insertEl(backgroundPathElements, svgUtil.svgEl);
       // insert paths to calculate on
